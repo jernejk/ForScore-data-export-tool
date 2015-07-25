@@ -5,8 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using Szds.ParsingOldResults.View.Data;
+using TeamResults.ExcelService;
 
 namespace TeamResults
 {
@@ -24,27 +26,27 @@ namespace TeamResults
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            List<TeamData> list = new List<TeamData>();
-            TeamData team = new TeamData();
-            team.Name = "DEV/marketing team";
-            team.ShooterNames.Add("Slegl, Andrej");
-            team.ShooterNames.Add("Vrhovnik, Bojan");
-            team.ShooterNames.Add("Kavka, Jernej");
-            team.ShooterNames.Add("Ivansek, Danica");
+            //List<TeamData> list = new List<TeamData>();
+            //TeamData team = new TeamData();
+            //team.Name = "DEV/marketing team";
+            //team.ShooterNames.Add("Slegl, Andrej");
+            //team.ShooterNames.Add("Vrhovnik, Bojan");
+            //team.ShooterNames.Add("Kavka, Jernej");
+            //team.ShooterNames.Add("Ivansek, Danica");
 
-            list.Add(team);
+            //list.Add(team);
 
-            team = new TeamData();
-            team.Name = "SAC";
-            team.ShooterNames.Add("Cucek, Matjaz");
-            team.ShooterNames.Add("Dautovic, Saso");
-            team.ShooterNames.Add("KAVAZOVIC, ELDAR");
-            team.ShooterNames.Add("Purkart, Simona");
-            team.ShooterNames.Add("Kastelic, Matjaz");
+            //team = new TeamData();
+            //team.Name = "SAC";
+            //team.ShooterNames.Add("Cucek, Matjaz");
+            //team.ShooterNames.Add("Dautovic, Saso");
+            //team.ShooterNames.Add("KAVAZOVIC, ELDAR");
+            //team.ShooterNames.Add("Purkart, Simona");
+            //team.ShooterNames.Add("Kastelic, Matjaz");
 
-            list.Add(team);
+            //list.Add(team);
 
-            File.WriteAllText("teams.json", JsonConvert.SerializeObject(list));
+            //File.WriteAllText("teams.json", JsonConvert.SerializeObject(list));
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -58,8 +60,9 @@ namespace TeamResults
                 string json = File.ReadAllText(dialog.FileName);
                 List<ShooterStageData> results = JsonConvert.DeserializeObject<List<ShooterStageData>>(json);
 
-                json = File.ReadAllText("teams.json");
-                var teams = JsonConvert.DeserializeObject<List<TeamData>>(json);
+                //json = File.ReadAllText("teams.json");
+                //var teams = JsonConvert.DeserializeObject<List<TeamData>>(json);
+                var teams = GetTeams();
 
                 ProcessTeams(results, teams);
             }
@@ -105,7 +108,17 @@ namespace TeamResults
             File.WriteAllText("team_results.txt", content);
         }
 
-        class TeamResult
+        private List<TeamData> GetTeams()
+        {
+            using (Stream stream = File.OpenRead("teams.xlsx"))
+            {
+                TeamsExcelProvider excelProvider = new TeamsExcelProvider();
+
+                return excelProvider.GetTeams(stream);
+            }
+        }
+
+        public class TeamResult
         {
             public TeamResult(string name, List<ShooterStageData> scores)
             {
