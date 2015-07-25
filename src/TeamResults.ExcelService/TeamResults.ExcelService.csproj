@@ -45,6 +45,7 @@
     <Compile Include="ExcelReader.cs" />
     <Compile Include="ExcelResult.cs" />
     <Compile Include="ExcelUtils.cs" />
+    <Compile Include="ExportTeamResultsAsExcel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TeamsExcelProvider.cs" />
   </ItemGroup>

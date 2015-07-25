@@ -87,6 +87,14 @@ namespace TeamResults
                 finalResults.Add(new TeamResult(team.Name, scores));
             }
 
+            File.Copy("team_results_template.xlsx", "team_results.xlsx", true);
+
+            using (FileStream stream = File.Open("team_results.xlsx", FileMode.Open, FileAccess.ReadWrite))
+            {
+                ExportTeamResultsAsExcel exporter = new ExportTeamResultsAsExcel();
+                var s = exporter.Export(finalResults, stream);
+            }
+
             string content = "Team results:" + Environment.NewLine;
             content += "-------------------------------------------------------------------------------" + Environment.NewLine;
 
@@ -115,51 +123,6 @@ namespace TeamResults
                 TeamsExcelProvider excelProvider = new TeamsExcelProvider();
 
                 return excelProvider.GetTeams(stream);
-            }
-        }
-
-        public class TeamResult
-        {
-            public TeamResult(string name, List<ShooterStageData> scores)
-            {
-                Name = name;
-                Scores = scores;
-
-                Score = CalculateScore();
-            }
-
-            public string Name { get; set; }
-
-            public List<ShooterStageData> Scores { get; set; }
-
-            public double Score { get; set; }
-
-            public List<ShooterStageData> BestThree
-            {
-                get { return Scores.Where(s => s.Completed).OrderBy(s => s.TotalScoreTime).Take(3).ToList(); }
-            }
-
-            public double CalculateScore()
-            {
-                if (Scores == null || Scores.Count == 0)
-                {
-                    return 9999;
-                }
-
-                var bestThree = BestThree;
-
-                double totalScore = 0;
-                for (int i = 0; i < bestThree.Count; ++i)
-                {
-                    totalScore += bestThree[i].TotalScoreTime;
-                }
-
-                for (int i = bestThree.Count; i < 3; ++i)
-                {
-                    totalScore += 9999;
-                }
-
-                return totalScore / 3d;
             }
         }
     }

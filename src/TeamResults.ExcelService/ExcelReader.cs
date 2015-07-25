@@ -15,58 +15,59 @@ namespace TeamResults.ExcelService
             List<Dictionary<CellData, CellData>> data;
             List<CellData> headers;
 
-            var z = new ZipArchive(stream);
-
-            ZipArchiveEntry worksheet = z.GetEntry("xl/worksheets/sheet1.xml");
-            ZipArchiveEntry sharedString = z.GetEntry("xl/sharedStrings.xml");
-
-            // get shared string
-            sharedStrings = new List<string>();
-            using (var sr = sharedString.Open())
+            using (var z = new ZipArchive(stream))
             {
-                XDocument xdoc = XDocument.Load(sr);
-                sharedStrings = (from e in xdoc.Root.Elements() select e.Elements().First().Value).ToList();
-            }
+                ZipArchiveEntry worksheet = z.GetEntry("xl/worksheets/sheet1.xml");
+                ZipArchiveEntry sharedString = z.GetEntry("xl/sharedStrings.xml");
 
-            // get header
-            using (var sr = worksheet.Open())
-            {
-                XDocument xdoc = XDocument.Load(sr);
-
-                // get element to first sheet data
-                XNamespace xmlns = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
-                XElement sheetData = xdoc.Root.Element(xmlns + "sheetData");
-
-                headers = new List<CellData>();
-
-                // build header first
-                var firstRow = sheetData.Elements().First();
-
-                // full of c
-                foreach (var c in firstRow.Elements())
+                // get shared string
+                sharedStrings = new List<string>();
+                using (var sr = sharedString.Open())
                 {
-                    headers.Add(GetCell(c));
+                    XDocument xdoc = XDocument.Load(sr);
+                    sharedStrings = (from e in xdoc.Root.Elements() select e.Elements().First().Value).ToList();
                 }
 
-                // build content now
-                data = new List<Dictionary<CellData, CellData>>();
-
-                foreach (var row in sheetData.Elements().Skip(1))
+                // get header
+                using (var sr = worksheet.Open())
                 {
-                    var rowData = new Dictionary<CellData, CellData>();
+                    XDocument xdoc = XDocument.Load(sr);
 
-                    foreach (var c in row.Elements())
+                    // get element to first sheet data
+                    XNamespace xmlns = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+                    XElement sheetData = xdoc.Root.Element(xmlns + "sheetData");
+
+                    headers = new List<CellData>();
+
+                    // build header first
+                    var firstRow = sheetData.Elements().First();
+
+                    // full of c
+                    foreach (var c in firstRow.Elements())
                     {
-                        CellData cell = GetCell(c);
-                        CellData cellHeader = headers.FirstOrDefault(ch => ch.Range[0] == cell.Range[0]);
-
-                        if (cellHeader != null)
-                        {
-                            rowData.Add(cellHeader, cell);
-                        }
+                        headers.Add(GetCell(c));
                     }
 
-                    data.Add(rowData);
+                    // build content now
+                    data = new List<Dictionary<CellData, CellData>>();
+
+                    foreach (var row in sheetData.Elements().Skip(1))
+                    {
+                        var rowData = new Dictionary<CellData, CellData>();
+
+                        foreach (var c in row.Elements())
+                        {
+                            CellData cell = GetCell(c);
+                            CellData cellHeader = headers.FirstOrDefault(ch => ch.Range[0] == cell.Range[0]);
+
+                            if (cellHeader != null)
+                            {
+                                rowData.Add(cellHeader, cell);
+                            }
+                        }
+
+                        data.Add(rowData);
+                    }
                 }
             }
 
