@@ -5,9 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
-using Szds.ParsingOldResults.View.Data;
 using TeamResults.ExcelService;
 
 namespace TeamResults
@@ -20,33 +18,6 @@ namespace TeamResults
         public MainWindow()
         {
             InitializeComponent();
-
-            Loaded += MainWindow_Loaded;
-        }
-
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
-        {
-            //List<TeamData> list = new List<TeamData>();
-            //TeamData team = new TeamData();
-            //team.Name = "DEV/marketing team";
-            //team.ShooterNames.Add("Slegl, Andrej");
-            //team.ShooterNames.Add("Vrhovnik, Bojan");
-            //team.ShooterNames.Add("Kavka, Jernej");
-            //team.ShooterNames.Add("Ivansek, Danica");
-
-            //list.Add(team);
-
-            //team = new TeamData();
-            //team.Name = "SAC";
-            //team.ShooterNames.Add("Cucek, Matjaz");
-            //team.ShooterNames.Add("Dautovic, Saso");
-            //team.ShooterNames.Add("KAVAZOVIC, ELDAR");
-            //team.ShooterNames.Add("Purkart, Simona");
-            //team.ShooterNames.Add("Kastelic, Matjaz");
-
-            //list.Add(team);
-
-            //File.WriteAllText("teams.json", JsonConvert.SerializeObject(list));
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -60,11 +31,7 @@ namespace TeamResults
                 string json = File.ReadAllText(dialog.FileName);
                 List<ShooterStageData> results = JsonConvert.DeserializeObject<List<ShooterStageData>>(json);
 
-                //json = File.ReadAllText("teams.json");
-                //var teams = JsonConvert.DeserializeObject<List<TeamData>>(json);
-                var teams = GetTeams();
-
-                ProcessTeams(results, teams);
+                ProcessTeams(results, GetTeams());
             }
         }
 
@@ -95,10 +62,16 @@ namespace TeamResults
                 var s = exporter.Export(finalResults, stream);
             }
 
+            string content = GenerateTextResults(finalResults);
+            File.WriteAllText("team_results.txt", content);
+        }
+
+        private static string GenerateTextResults(List<TeamResult> finalResults)
+        {
             string content = "Team results:" + Environment.NewLine;
             content += "-------------------------------------------------------------------------------" + Environment.NewLine;
 
-            int place = 8;
+            int place = 0;
             foreach (TeamResult result in finalResults.OrderBy(f => f.Score))
             {
                 content += string.Format("#{0, -2}\t{1, -20} \t{2,7:###.00} seconds {3}", ++place, result.Name, Math.Round(result.Score, 2), Environment.NewLine);
@@ -113,7 +86,7 @@ namespace TeamResults
                 content += Environment.NewLine;
             }
 
-            File.WriteAllText("team_results.txt", content);
+            return content;
         }
 
         private List<TeamData> GetTeams()
