@@ -11,6 +11,12 @@ namespace PortingDataFromForScore.Data
             Scores = scores;
 
             Score = CalculateScore();
+
+            int numberOfShooters = scores.Count > 3 ? 3 : scores.Count;
+            if (numberOfShooters > 0)
+            {
+                AverageScore = Score / numberOfShooters;
+            }
         }
 
         public string Name { get; set; }
@@ -18,6 +24,8 @@ namespace PortingDataFromForScore.Data
         public List<ShooterStageData> Scores { get; set; }
 
         public double Score { get; set; }
+
+        public double AverageScore { get; set; }
 
         public List<ShooterStageData> BestThree
         {
@@ -44,7 +52,7 @@ namespace PortingDataFromForScore.Data
                 totalScore += 9999;
             }
 
-            return totalScore / 3d;
+            return totalScore;
         }
     }
 }

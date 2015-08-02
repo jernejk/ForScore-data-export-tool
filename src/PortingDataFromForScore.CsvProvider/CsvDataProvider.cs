@@ -30,7 +30,7 @@ namespace PortingDataFromForScore.Providers
                 GetAllMatchesInfo();
             }
 
-            string text = File.ReadAllText(RootFolder + "matches.STA.csv");
+            string text = ReadFileAsAnsi(RootFolder + "matches.STA.csv");
             TextReader reader = new StringReader(text);
             CsvReader csv = new CsvReader(reader);
 
@@ -70,9 +70,9 @@ namespace PortingDataFromForScore.Providers
                 stage.ProceduralErrors = csv.GetField<int>("Procedurals");
                 stage.NonThreats = csv.GetField<int>("Nonthreats");
                 stage.FailureToNeutralize = csv.GetField<int>("Ftns");
-                stage.FailureToDoRight = csv.GetField<int>("Ftdrs") > 0;
-                stage.DidNotFinished = csv.GetField<int>("Dnf") > 0;
-                stage.Disqualified = csv.GetField<int>("Dq") > 0;
+                stage.FailureToDoRight = csv.GetField<int>("Ftdrs") != 0;
+                stage.DidNotFinished = csv.GetField<int>("Dnf") != 0;
+                stage.Disqualified = csv.GetField<int>("Dq") != 0;
                 stage.ShootTime = GetDoubleFromCsv(csv, "Nettime");
                 stage.TotalPenaltyTime = GetDoubleFromCsv(csv, "Totalpenaltysecs");
                 stage.TotalTime = GetDoubleFromCsv(csv, "Totalstagescore");
@@ -100,7 +100,7 @@ namespace PortingDataFromForScore.Providers
                 GetAllStages();
             }
 
-            string text = File.ReadAllText(RootFolder + "matches.RES.csv");
+            string text = ReadFileAsAnsi(RootFolder + "matches.RES.csv");
             TextReader reader = new StringReader(text);
             CsvReader csv = new CsvReader(reader);
 
@@ -185,7 +185,7 @@ namespace PortingDataFromForScore.Providers
 
         public List<ShooterData> GetAllShooters()
         {
-            string text = File.ReadAllText(RootFolder + "shooters.SHO.csv");
+            string text = ReadFileAsAnsi(RootFolder + "shooters.SHO.csv");
             TextReader reader = new StringReader(text);
             CsvReader csv = new CsvReader(reader);
 
@@ -255,7 +255,7 @@ namespace PortingDataFromForScore.Providers
 
         public List<MatchData> GetAllMatchesInfo()
         {
-            string text = File.ReadAllText(RootFolder + "matches.MAT.csv");
+            string text = ReadFileAsAnsi(RootFolder + "matches.MAT.csv");
             TextReader reader = new StringReader(text);
             CsvReader csv = new CsvReader(reader);
 
@@ -286,6 +286,21 @@ namespace PortingDataFromForScore.Providers
             }
 
             return matches;
+        }
+
+        private string ReadFileAsAnsi(string file)
+        {
+            byte[] data = File.ReadAllBytes(file);
+
+            string text = System.Text.Encoding.Default.GetString(data);
+
+            // Convert Č and č
+            text = text.Replace("È", "Č").Replace("È".ToLower(), "č");
+
+            // Convert Ć and ć
+            text = text.Replace("Æ", "Ć").Replace("Æ".ToLower(), "ć");
+
+            return text;
         }
     }
 }

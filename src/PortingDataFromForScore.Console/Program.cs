@@ -41,6 +41,14 @@ namespace PortingDataFromForScore.Console
             System.Console.WriteLine("Importing shooters data...");
             var shooters = provider.GetAllShooters();
 
+            foreach (var s in shooters)
+            {
+                if (ContainsNonAsciiChar(s.FirstName) || ContainsNonAsciiChar(s.LastName))
+                {
+                    System.Console.WriteLine(s.FullName);
+                }
+            }
+
             System.Console.WriteLine("Importing stages data...");
             var stages = provider.GetAllStages();
 
@@ -95,20 +103,38 @@ namespace PortingDataFromForScore.Console
         private static void ProcessTeams(List<ShooterStageData> results, List<TeamData> teams, Settings settings)
         {
             List<TeamResult> finalResults = new List<TeamResult>();
+            List<string> missingShooters = new List<string>();
             foreach (var team in teams)
             {
                 var scores = new List<ShooterStageData>();
-                foreach (var shooterName in team.ShooterNames)
+                foreach (string shooterName in team.ShooterNames)
                 {
-                    ShooterStageData score = results.FirstOrDefault(s => s.FullName.Equals(shooterName, System.StringComparison.CurrentCultureIgnoreCase));
+                    ShooterStageData score = results.FirstOrDefault(s => CompareShootersNames(s.FullName, shooterName));
 
                     if (score != null)
                     {
                         scores.Add(score);
                     }
+                    else
+                    {
+                        missingShooters.Add(shooterName);
+                    }
                 }
 
                 finalResults.Add(new TeamResult(team.Name, scores));
+            }
+
+            if (missingShooters.Count > 0)
+            {
+                System.Console.WriteLine();
+                System.Console.WriteLine("Missing shooters: ");
+
+                foreach (var shooter in missingShooters)
+                {
+                    System.Console.WriteLine(shooter);
+                }
+
+                System.Console.WriteLine();
             }
 
             File.Copy(settings.TeamResultsTemplatePath, settings.TeamResultsPath, true);
@@ -120,29 +146,32 @@ namespace PortingDataFromForScore.Console
             }
 
             string content = GenerateTextResults(finalResults);
-            File.WriteAllText(Path.GetFileNameWithoutExtension(settings.TeamResultsPath) + ".txt", content);
+            string path = Path.ChangeExtension(settings.TeamResultsPath, "txt");
+            File.WriteAllText(path, content);
         }
 
         private static string GenerateTextResults(List<TeamResult> finalResults)
         {
-            string content = "Team results:" + Environment.NewLine;
-            content += "-------------------------------------------------------------------------------" + Environment.NewLine;
+            string content = string.Empty;
 
             int place = 0;
-            foreach (TeamResult result in finalResults.OrderBy(f => f.Score))
+            foreach (TeamResult result in finalResults.Where(t => t.Scores.Count >= 3).OrderBy(f => f.Score))
             {
-                content += string.Format("#{0, -2}\t{1, -20} \t{2,7:###.00} seconds {3}", ++place, result.Name, Math.Round(result.Score, 2), Environment.NewLine);
+                content += string.Format("#{0, -2}\t{1}{2}", ++place, result.Name, Environment.NewLine);
                 content += "-------------------------------------------------------------------------------" + Environment.NewLine;
 
                 foreach (var best in result.BestThree)
                 {
-                    content += string.Format("\t{0, -20}  \t{1,7:###.00} seconds {2}", best.FullName + ":", best.TotalScoreTime, Environment.NewLine);
+                    content += string.Format("\t{0, -49}  \t{1,8:###.00} sekund{2}", best.FullName + ":", best.TotalScoreTime, Environment.NewLine);
                 }
 
-                content += "===============================================================================" + Environment.NewLine;
+                content += "-------------------------------------------------------------------------------" + Environment.NewLine;
+                content += string.Format("\t{1, -49} \t{2,8:###.00} sekund{3}", " ", " ", Math.Round(result.Score, 2), Environment.NewLine);
+
                 content += Environment.NewLine;
             }
 
+            System.Console.WriteLine("Team results:" + Environment.NewLine);
             System.Console.WriteLine(content);
 
             return content;
@@ -174,6 +203,30 @@ namespace PortingDataFromForScore.Console
             }
 
             return settings;
+        }
+
+        private static bool CompareShootersNames(string nameA, string nameB)
+        {
+            return ToAscii(nameA.ToLower()) == ToAscii(nameB.ToLower());
+        }
+
+        private static string ToAscii(string name)
+        {
+            return name.Replace("č", "c").Replace("ž", "z").Replace("š", "s").Replace("ć", "c").Replace("đ", "dz").Replace(((char)240).ToString(), "dz")
+                       .Replace("Č", "C").Replace("Ž", "Z").Replace("Š", "S").Replace("Ć", "C").Replace("Đ", "DZ").Replace(((char)208).ToString(), "DZ");
+        }
+
+        private static bool ContainsNonAsciiChar(string name)
+        {
+            foreach (char c in ToAscii(name))
+            {
+                if (!((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == ' ' || c == '-'))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }
